@@ -279,18 +279,18 @@ export function ChatPanel() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-white dark:bg-[#0f0f0f]">
       <div className="flex-1 overflow-y-auto px-4 py-8">
         {messages.length === 0 && (
-          <div className="text-center text-[#5f6368] mt-12">
+          <div className="text-center text-[#5f6368] dark:text-[#9aa0a6] mt-12">
             <div className="mb-4">
-              <svg className="w-16 h-16 mx-auto text-[#1a73e8] opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-16 h-16 mx-auto text-[#1a73e8] dark:text-[#8ab4f8] opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
               </svg>
             </div>
-            <p className="text-sm font-medium text-[#202124] mb-1">Start a conversation</p>
-            <p className="text-xs text-[#5f6368]">The AI can see your open files for context</p>
-            <p className="text-xs text-[#5f6368] mt-2">💡 Tip: Paste screenshots with Ctrl+V / Cmd+V</p>
+            <p className="text-sm font-medium text-[#202124] dark:text-[#e8eaed] mb-1">Start a conversation</p>
+            <p className="text-xs text-[#5f6368] dark:text-[#9aa0a6]">The AI can see your open files for context</p>
+            <p className="text-xs text-[#5f6368] dark:text-[#9aa0a6] mt-2">💡 Tip: Paste screenshots with Ctrl+V / Cmd+V</p>
           </div>
         )}
 
@@ -312,8 +312,8 @@ export function ChatPanel() {
                 className={cn(
                   "rounded-2xl px-4 py-3 max-w-[85%] shadow-sm",
                   message.role === "user"
-                    ? "bg-[#1a73e8] text-white"
-                    : "bg-[#f1f3f4] text-[#202124]"
+                    ? "bg-[#1a73e8] dark:bg-[#1a73e8] text-white"
+                    : "bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed]"
                 )}
               >
                 {message.images && message.images.length > 0 && (
@@ -337,31 +337,31 @@ export function ChatPanel() {
                           <img
                             src={media.url}
                             alt={media.prompt}
-                            className="max-w-full h-auto rounded-lg border border-[#e8eaed]"
+                            className="max-w-full h-auto rounded-lg border border-[#e8eaed] dark:border-[#2d2d2d]"
                           />
                         )}
                         {media.type === "video" && (
                           <video
                             src={media.url}
                             controls
-                            className="max-w-full h-auto rounded-lg border border-[#e8eaed]"
+                            className="max-w-full h-auto rounded-lg border border-[#e8eaed] dark:border-[#2d2d2d]"
                           >
                             Your browser does not support the video tag.
                           </video>
                         )}
                         {media.type === "3d" && (
-                          <div className="p-4 bg-[#f8f9fa] rounded-lg border border-[#e8eaed]">
-                            <p className="text-xs text-[#5f6368] mb-2">3D Model: {media.prompt}</p>
+                          <div className="p-4 bg-[#f8f9fa] dark:bg-[#1a1a1a] rounded-lg border border-[#e8eaed] dark:border-[#2d2d2d]">
+                            <p className="text-xs text-[#5f6368] dark:text-[#9aa0a6] mb-2">3D Model: {media.prompt}</p>
                             <a
                               href={media.url}
                               download={`${media.prompt}.${media.format}`}
-                              className="text-sm text-[#1a73e8] hover:underline"
+                              className="text-sm text-[#1a73e8] dark:text-[#8ab4f8] hover:underline"
                             >
                               Download {media.format.toUpperCase()} model
                             </a>
                           </div>
                         )}
-                        <p className="text-xs text-[#5f6368] mt-2 italic">Format: {media.format.toUpperCase()}</p>
+                        <p className="text-xs text-[#5f6368] dark:text-[#9aa0a6] mt-2 italic">Format: {media.format.toUpperCase()}</p>
                       </div>
                     ))}
                   </div>
@@ -374,7 +374,7 @@ export function ChatPanel() {
                     "text-xs mt-3 pt-2 border-t",
                     message.role === "user" 
                       ? "border-white/20 text-white/70" 
-                      : "border-[#e8eaed] text-[#5f6368]"
+                      : "border-[#e8eaed] dark:border-[#2d2d2d] text-[#5f6368] dark:text-[#9aa0a6]"
                   )}>
                     {message.tokenUsage.totalTokens} tokens • {message.tokenUsage.model}
                   </div>
@@ -393,8 +393,8 @@ export function ChatPanel() {
               <div className="w-8 h-8 rounded-full bg-[#1a73e8] flex items-center justify-center flex-shrink-0">
                 <span className="text-white text-xs font-medium">AI</span>
               </div>
-              <div className="bg-[#f1f3f4] rounded-2xl px-4 py-3">
-                <div className="flex items-center gap-2 text-[#5f6368]">
+              <div className="bg-[#f1f3f4] dark:bg-[#2d2d2d] rounded-2xl px-4 py-3">
+                <div className="flex items-center gap-2 text-[#5f6368] dark:text-[#9aa0a6]">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span className="text-sm">Thinking...</span>
                 </div>
@@ -406,20 +406,20 @@ export function ChatPanel() {
         <div ref={messagesEndRef} />
       </div>
 
-      <form onSubmit={handleSubmit} className="p-4 border-t border-[#e8eaed] bg-white">
+      <form onSubmit={handleSubmit} className="p-4 border-t border-[#e8eaed] dark:border-[#2d2d2d] bg-white dark:bg-[#0f0f0f]">
         <div className="max-w-4xl mx-auto">
           {(uploadedFiles.size > 0 || pendingImages.length > 0) && (
             <div className="mb-3 flex flex-wrap gap-2">
               {Array.from(uploadedFiles.keys()).map((path) => (
                 <span
                   key={path}
-                  className="px-3 py-1 bg-[#f1f3f4] text-[#202124] rounded-full text-xs flex items-center gap-2"
+                  className="px-3 py-1 bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] rounded-full text-xs flex items-center gap-2"
                 >
                   {path.split("/").pop()}
                   <button
                     type="button"
                     onClick={() => removeUploadedFile(path)}
-                    className="hover:text-red-600"
+                    className="hover:text-red-600 dark:hover:text-red-400"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -428,14 +428,14 @@ export function ChatPanel() {
               {pendingImages.map((img, idx) => (
                 <span
                   key={`img-${idx}`}
-                  className="px-3 py-1 bg-[#e3f2fd] text-[#1a73e8] rounded-full text-xs flex items-center gap-2"
+                  className="px-3 py-1 bg-[#e3f2fd] dark:bg-[#1a4480] text-[#1a73e8] dark:text-[#8ab4f8] rounded-full text-xs flex items-center gap-2"
                 >
                   <ImageIcon className="w-3 h-3" />
                   Screenshot {idx + 1}
                   <button
                     type="button"
                     onClick={() => setPendingImages((prev) => prev.filter((_, i) => i !== idx))}
-                    className="hover:text-red-600"
+                    className="hover:text-red-600 dark:hover:text-red-400"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -447,7 +447,7 @@ export function ChatPanel() {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="p-3 hover:bg-[#f8f9fa] rounded-full text-[#5f6368] hover:text-[#202124] transition-colors"
+              className="p-3 hover:bg-[#f8f9fa] dark:hover:bg-[#2d2d2d] rounded-full text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-[#e8eaed] transition-colors"
               title="Upload files"
             >
               <Paperclip className="w-5 h-5" />
@@ -455,7 +455,7 @@ export function ChatPanel() {
             <button
               type="button"
               onClick={() => imageInputRef.current?.click()}
-              className="p-3 hover:bg-[#f8f9fa] rounded-full text-[#5f6368] hover:text-[#202124] transition-colors"
+              className="p-3 hover:bg-[#f8f9fa] dark:hover:bg-[#2d2d2d] rounded-full text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-[#e8eaed] transition-colors"
               title="Upload image or paste screenshot (Ctrl+V / Cmd+V)"
             >
               <ImageIcon className="w-5 h-5" />
@@ -483,14 +483,14 @@ export function ChatPanel() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask a question, paste a screenshot (Ctrl+V), or request code help..."
-                className="w-full px-4 py-3 bg-[#f8f9fa] text-[#202124] rounded-full border border-[#e8eaed] focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:border-transparent transition-all disabled:opacity-50"
+                className="w-full px-4 py-3 bg-[#f8f9fa] dark:bg-[#1a1a1a] text-[#202124] dark:text-[#e8eaed] rounded-full border border-[#e8eaed] dark:border-[#2d2d2d] focus:outline-none focus:ring-2 focus:ring-[#1a73e8] dark:focus:ring-[#8ab4f8] focus:border-transparent transition-all disabled:opacity-50 placeholder:text-[#5f6368] dark:placeholder:text-[#9aa0a6]"
                 disabled={isStreaming}
               />
             </div>
             <button
               type="submit"
               disabled={!input.trim() || isStreaming}
-              className="px-6 py-3 bg-[#1a73e8] text-white rounded-full hover:bg-[#1557b0] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-sm transition-all hover:shadow-md"
+              className="px-6 py-3 bg-[#1a73e8] dark:bg-[#8ab4f8] text-white dark:text-[#0f0f0f] rounded-full hover:bg-[#1557b0] dark:hover:bg-[#aecbfa] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-sm transition-all hover:shadow-md"
             >
               {isStreaming ? (
                 <Loader2 className="w-5 h-5 animate-spin" />

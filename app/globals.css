@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  /* Gemini-inspired color palette */
+  /* Light mode - Gemini-inspired color palette */
   --background: #ffffff;
   --foreground: #1f1f1f;
   --sidebar-bg: #f8f9fa;
@@ -16,6 +16,26 @@
   --text-secondary: #5f6368;
   --accent: #1a73e8;
   --hover: #f8f9fa;
+  --input-bg: #f8f9fa;
+  --card-bg: #ffffff;
+}
+
+.dark {
+  /* Dark mode color palette */
+  --background: #0f0f0f;
+  --foreground: #e8eaed;
+  --sidebar-bg: #1a1a1a;
+  --editor-bg: #0f0f0f;
+  --border: #2d2d2d;
+  --chat-bg: #0f0f0f;
+  --user-message: #1a73e8;
+  --assistant-message: #2d2d2d;
+  --text-primary: #e8eaed;
+  --text-secondary: #9aa0a6;
+  --accent: #8ab4f8;
+  --hover: #2d2d2d;
+  --input-bg: #1a1a1a;
+  --card-bg: #1a1a1a;
 }
 
 * {
@@ -58,5 +78,13 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #bdc1c6;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #5f6368;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #80868b;
 }
 

@@ -158,8 +158,14 @@ export const useAppStore = create<AppState>((set) => ({
   setChatOpen: (open) => set({ chatOpen: open }),
   terminalOpen: false,
   setTerminalOpen: (open) => set({ terminalOpen: open }),
-  theme: "dark",
-  setTheme: (theme) => set({ theme }),
+  theme: "light",
+  setTheme: (theme) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("theme", theme);
+      document.documentElement.classList.toggle("dark", theme === "dark");
+    }
+    set({ theme });
+  },
 
   // Token usage
   totalTokens: 0,
