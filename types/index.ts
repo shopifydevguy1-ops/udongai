@@ -64,5 +64,15 @@ export interface ChatMessage {
   timestamp: Date;
   tokenUsage?: TokenUsage;
   images?: string[]; // Base64 encoded images
+  generatedMedia?: GeneratedMedia[]; // Generated images/videos
+}
+
+export type MediaFormat = "png" | "jpg" | "gif" | "webp" | "mp4" | "glb" | "gltf";
+
+export interface GeneratedMedia {
+  url: string;
+  format: MediaFormat;
+  prompt: string;
+  type: "image" | "video" | "3d";
 }
 

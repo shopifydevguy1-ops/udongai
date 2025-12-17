@@ -114,6 +114,71 @@ export function ChatPanel() {
     }
   };
 
+  // Detect if user wants to generate media
+  const detectMediaGeneration = (text: string): { generate: boolean; format: string; prompt: string } | null => {
+    const lowerText = text.toLowerCase();
+    
+    // Check for explicit generation requests
+    const generationPatterns = [
+      { pattern: /generate\s+(?:a|an|the)?\s*(gif|webp|mp4|3d|image|picture|video|model)/i, format: "auto" },
+      { pattern: /create\s+(?:a|an|the)?\s*(gif|webp|mp4|3d|image|picture|video|model)/i, format: "auto" },
+      { pattern: /make\s+(?:a|an|the)?\s*(gif|webp|mp4|3d|image|picture|video|model)/i, format: "auto" },
+      { pattern: /draw\s+(?:a|an|the)?/i, format: "png" },
+      { pattern: /show\s+me\s+(?:a|an|the)?/i, format: "png" },
+    ];
+
+    for (const { pattern, format } of generationPatterns) {
+      if (pattern.test(text)) {
+        const match = text.match(pattern);
+        let detectedFormat = format;
+        
+        // Extract format from match
+        if (match && match[1]) {
+          const formatMap: Record<string, string> = {
+            gif: "gif",
+            webp: "webp",
+            mp4: "mp4",
+            video: "mp4",
+            "3d": "glb",
+            model: "glb",
+            image: "png",
+            picture: "png",
+          };
+          detectedFormat = formatMap[match[1].toLowerCase()] || "png";
+        }
+
+        // Extract prompt (remove generation keywords)
+        const prompt = text
+          .replace(/^(generate|create|make|draw|show me)\s+(?:a|an|the)?\s*(gif|webp|mp4|3d|image|picture|video|model)?\s*/i, "")
+          .trim();
+
+        if (prompt) {
+          return { generate: true, format: detectedFormat, prompt };
+        }
+      }
+    }
+
+    // Check for format-specific keywords
+    if (lowerText.includes(" as gif") || lowerText.includes(" gif format")) {
+      const prompt = text.replace(/\s+as\s+gif|\s+gif\s+format/gi, "").trim();
+      if (prompt) return { generate: true, format: "gif", prompt };
+    }
+    if (lowerText.includes(" as webp") || lowerText.includes(" webp format")) {
+      const prompt = text.replace(/\s+as\s+webp|\s+webp\s+format/gi, "").trim();
+      if (prompt) return { generate: true, format: "webp", prompt };
+    }
+    if (lowerText.includes(" as mp4") || lowerText.includes(" mp4 format") || lowerText.includes(" as video")) {
+      const prompt = text.replace(/\s+as\s+mp4|\s+mp4\s+format|\s+as\s+video/gi, "").trim();
+      if (prompt) return { generate: true, format: "mp4", prompt };
+    }
+    if (lowerText.includes(" as 3d") || lowerText.includes(" 3d model") || lowerText.includes(" as glb")) {
+      const prompt = text.replace(/\s+as\s+3d|\s+3d\s+model|\s+as\s+glb/gi, "").trim();
+      if (prompt) return { generate: true, format: "glb", prompt };
+    }
+
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() && pendingImages.length === 0 || isStreaming) return;
@@ -127,6 +192,39 @@ export function ChatPanel() {
     setIsStreaming(true);
 
     try {
+      // Check if user wants to generate media
+      const mediaRequest = detectMediaGeneration(userMessage);
+      
+      if (mediaRequest && mediaRequest.generate) {
+        // Generate media
+        const generateResponse = await fetch("/api/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            prompt: mediaRequest.prompt,
+            format: mediaRequest.format,
+            size: "1024x1024",
+          }),
+        });
+
+        if (!generateResponse.ok) {
+          const error = await generateResponse.json();
+          throw new Error(error.error || "Failed to generate media");
+        }
+
+        const generatedData = await generateResponse.json();
+        
+        addMessage({
+          role: "assistant",
+          content: `I've generated a ${generatedData.type} for you: "${mediaRequest.prompt}"`,
+          generatedMedia: [generatedData],
+        });
+
+        setIsStreaming(false);
+        return;
+      }
+
+      // Regular chat flow
       // Build context from open files
       const context = getContextFromOpenFiles();
       let systemMessage = context
@@ -227,6 +325,43 @@ export function ChatPanel() {
                           alt={`Attached image ${idx + 1}`}
                           className="max-w-full h-auto rounded-lg"
                         />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {message.generatedMedia && message.generatedMedia.length > 0 && (
+                  <div className="mb-3 space-y-3">
+                    {message.generatedMedia.map((media, idx) => (
+                      <div key={idx} className="rounded-lg overflow-hidden">
+                        {media.type === "image" && (
+                          <img
+                            src={media.url}
+                            alt={media.prompt}
+                            className="max-w-full h-auto rounded-lg border border-[#e8eaed]"
+                          />
+                        )}
+                        {media.type === "video" && (
+                          <video
+                            src={media.url}
+                            controls
+                            className="max-w-full h-auto rounded-lg border border-[#e8eaed]"
+                          >
+                            Your browser does not support the video tag.
+                          </video>
+                        )}
+                        {media.type === "3d" && (
+                          <div className="p-4 bg-[#f8f9fa] rounded-lg border border-[#e8eaed]">
+                            <p className="text-xs text-[#5f6368] mb-2">3D Model: {media.prompt}</p>
+                            <a
+                              href={media.url}
+                              download={`${media.prompt}.${media.format}`}
+                              className="text-sm text-[#1a73e8] hover:underline"
+                            >
+                              Download {media.format.toUpperCase()} model
+                            </a>
+                          </div>
+                        )}
+                        <p className="text-xs text-[#5f6368] mt-2 italic">Format: {media.format.toUpperCase()}</p>
                       </div>
                     ))}
                   </div>
