@@ -210,8 +210,8 @@ export function FileExplorer({ className }: FileExplorerProps) {
         <div key={node.path}>
           <div
             className={cn(
-              "flex items-center gap-1 px-2 py-1 cursor-pointer hover:bg-gray-700 rounded group relative",
-              isSelected && "bg-gray-700"
+              "flex items-center gap-1 px-2 py-1.5 cursor-pointer hover:bg-[#e8eaed] rounded-lg group relative transition-colors",
+              isSelected && "bg-[#e8eaed]"
             )}
             style={{ paddingLeft: `${level * 16 + 8}px` }}
             onClick={() => toggleExpand(node.path)}
@@ -223,12 +223,12 @@ export function FileExplorer({ className }: FileExplorerProps) {
             }}
           >
             {isExpanded ? (
-              <ChevronDown className="w-4 h-4 text-gray-400" />
+              <ChevronDown className="w-4 h-4 text-[#5f6368]" />
             ) : (
-              <ChevronRight className="w-4 h-4 text-gray-400" />
+              <ChevronRight className="w-4 h-4 text-[#5f6368]" />
             )}
-            <Folder className="w-4 h-4 text-blue-400" />
-            <span className="text-sm text-gray-300 flex-1">{node.name}</span>
+            <Folder className="w-4 h-4 text-[#1a73e8]" />
+            <span className="text-sm text-[#202124] flex-1">{node.name}</span>
             {isUploadedPathNode && (
               <button
                 onClick={(e) => handleRemoveDirectory(node.path, e)}
@@ -252,8 +252,8 @@ export function FileExplorer({ className }: FileExplorerProps) {
       <div
         key={node.path}
         className={cn(
-          "flex items-center gap-1 px-2 py-1 cursor-pointer hover:bg-gray-700 rounded group relative",
-          isSelected && "bg-gray-700"
+              "flex items-center gap-1 px-2 py-1.5 cursor-pointer hover:bg-[#e8eaed] rounded-lg group relative transition-colors",
+              isSelected && "bg-[#e8eaed]"
         )}
         style={{ paddingLeft: `${level * 16 + 24}px` }}
         onClick={() => {
@@ -272,15 +272,15 @@ export function FileExplorer({ className }: FileExplorerProps) {
           }
         }}
       >
-        <File className="w-4 h-4 text-gray-400" />
-        <span className="text-sm text-gray-300 flex-1">{node.name}</span>
+        <File className="w-4 h-4 text-[#5f6368]" />
+        <span className="text-sm text-[#202124] flex-1">{node.name}</span>
         {isExactUploadedFile && (
           <button
             onClick={(e) => handleRemoveFile(node.path, e)}
-            className="opacity-70 group-hover:opacity-100 p-1 hover:bg-red-600/20 rounded transition-opacity"
-            title="Remove file (or right-click)"
-          >
-            <X className="w-3.5 h-3.5 text-gray-400 hover:text-red-400" />
+              className="opacity-70 group-hover:opacity-100 p-1 hover:bg-red-100 rounded transition-opacity"
+              title="Remove file (or right-click)"
+            >
+              <X className="w-3.5 h-3.5 text-[#5f6368] hover:text-red-600" />
           </button>
         )}
       </div>
@@ -288,14 +288,14 @@ export function FileExplorer({ className }: FileExplorerProps) {
   };
 
   return (
-    <div className={cn("h-full overflow-y-auto bg-[#252526] flex flex-col", className)}>
-      <div className="p-2 border-b border-gray-700">
+    <div className={cn("h-full overflow-y-auto bg-[#f8f9fa] flex flex-col", className)}>
+      <div className="p-3 border-b border-[#e8eaed]">
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-sm font-semibold text-gray-300">EXPLORER</h2>
+          <h2 className="text-sm font-medium text-[#202124]">Explorer</h2>
           <div className="flex gap-1">
             <button
               onClick={handleNewFile}
-              className="p-1 hover:bg-gray-700 rounded text-gray-400 hover:text-gray-200"
+              className="p-1.5 hover:bg-[#e8eaed] rounded-lg text-[#5f6368] hover:text-[#202124] transition-colors"
               title="New file"
             >
               <Plus className="w-4 h-4" />
@@ -304,7 +304,7 @@ export function FileExplorer({ className }: FileExplorerProps) {
               onClick={() => {
                 folderInputRef.current?.click();
               }}
-              className="p-1 hover:bg-gray-700 rounded text-gray-400 hover:text-gray-200"
+              className="p-1.5 hover:bg-[#e8eaed] rounded-lg text-[#5f6368] hover:text-[#202124] transition-colors"
               title="Upload folder"
             >
               <FolderUp className="w-4 h-4" />
@@ -314,7 +314,7 @@ export function FileExplorer({ className }: FileExplorerProps) {
                 fileInputRef.current?.click();
                 setShowUpload(true);
               }}
-              className="p-1 hover:bg-gray-700 rounded text-gray-400 hover:text-gray-200"
+              className="p-1.5 hover:bg-[#e8eaed] rounded-lg text-[#5f6368] hover:text-[#202124] transition-colors"
               title="Upload files"
             >
               <Upload className="w-4 h-4" />
@@ -323,7 +323,7 @@ export function FileExplorer({ className }: FileExplorerProps) {
         </div>
         {uploadedFiles.size > 0 && (
           <div className="flex items-center justify-between text-xs">
-            <span className="text-gray-500">
+            <span className="text-[#5f6368]">
               {uploadedFiles.size} uploaded file{uploadedFiles.size > 1 ? "s" : ""}
             </span>
             <button
@@ -375,7 +375,7 @@ export function FileExplorer({ className }: FileExplorerProps) {
                   </div>
                 )}
                 {hasServerFiles && (
-                  <div className={hasUploadedFiles ? "mt-4 border-t border-gray-700 pt-2" : ""}>
+                  <div className={hasUploadedFiles ? "mt-4 border-t border-[#e8eaed] pt-2" : ""}>
                     {fileTree!.map((node) => renderNode(node, 0, false))}
                   </div>
                 )}
@@ -385,22 +385,22 @@ export function FileExplorer({ className }: FileExplorerProps) {
           
           return (
             <div className="px-4 py-2">
-              <div className="text-sm text-gray-500 mb-3">
+              <div className="text-sm text-[#5f6368] mb-3">
                 No files in workspace
               </div>
-              <div className="text-xs text-gray-600 mb-3">
+              <div className="text-xs text-[#5f6368] mb-3">
                 Upload files or folders, or create new ones to get started
               </div>
               <div className="flex flex-col gap-2">
                 <button
                   onClick={() => folderInputRef.current?.click()}
-                  className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded"
+                  className="text-xs px-3 py-1.5 bg-[#1a73e8] hover:bg-[#1557b0] text-white rounded-lg transition-colors"
                 >
                   Upload Folder
                 </button>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="text-xs px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded"
+                  className="text-xs px-3 py-1.5 bg-[#f8f9fa] hover:bg-[#e8eaed] text-[#202124] rounded-lg transition-colors border border-[#e8eaed]"
                 >
                   Upload Files
                 </button>

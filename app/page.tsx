@@ -15,7 +15,7 @@ export default function Home() {
 
   return (
     <ErrorBoundary>
-      <div className="flex flex-col h-screen bg-[#1e1e1e] text-gray-200">
+      <div className="flex flex-col h-screen bg-white text-[#202124]">
         {/* Main content area */}
         <div className="flex flex-1 overflow-hidden">
           {/* Sidebar toggle */}
@@ -23,13 +23,13 @@ export default function Home() {
 
           {/* Sidebar */}
           {sidebarOpen && (
-            <div className="w-64 flex-shrink-0 border-r border-gray-700">
+            <div className="w-64 flex-shrink-0 border-r border-[#e8eaed] bg-[#f8f9fa]">
               <FileExplorer />
             </div>
           )}
 
           {/* Editor area */}
-          <div className="flex-1 flex flex-col min-w-0">
+          <div className="flex-1 flex flex-col min-w-0 bg-white">
             <TabBar />
             <div className="flex-1 overflow-hidden">
               <CodeEditor />
@@ -39,7 +39,7 @@ export default function Home() {
 
           {/* Chat panel */}
           {chatOpen && (
-            <div className="w-80 flex-shrink-0">
+            <div className="w-96 flex-shrink-0 border-l border-[#e8eaed] bg-white">
               <ChatPanel />
             </div>
           )}

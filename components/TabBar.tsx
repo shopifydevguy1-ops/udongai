@@ -12,7 +12,7 @@ export function TabBar() {
   }
 
   return (
-    <div className="flex items-center bg-[#2d2d2d] border-b border-gray-700 overflow-x-auto">
+    <div className="flex items-center bg-white border-b border-[#e8eaed] overflow-x-auto">
       {editor.openFiles.map((file) => {
         const fileName = file.path.split("/").pop() || file.path;
         const isActive = editor.activeFile === file.path;
@@ -21,12 +21,12 @@ export function TabBar() {
           <div
             key={file.path}
             className={cn(
-              "flex items-center gap-2 px-4 py-2 cursor-pointer border-r border-gray-700 hover:bg-[#1e1e1e]",
-              isActive && "bg-[#1e1e1e]"
+              "flex items-center gap-2 px-4 py-2.5 cursor-pointer border-r border-[#e8eaed] hover:bg-[#f8f9fa] transition-colors",
+              isActive && "bg-[#f8f9fa] border-b-2 border-b-[#1a73e8]"
             )}
             onClick={() => setActiveFile(file.path)}
           >
-            <span className="text-sm text-gray-300 whitespace-nowrap">
+            <span className="text-sm text-[#202124] whitespace-nowrap font-medium">
               {fileName}
             </span>
             <button
@@ -34,9 +34,9 @@ export function TabBar() {
                 e.stopPropagation();
                 closeFile(file.path);
               }}
-              className="text-gray-400 hover:text-gray-200 rounded p-0.5"
+              className="text-[#5f6368] hover:text-[#202124] hover:bg-[#e8eaed] rounded-full p-0.5 transition-colors"
             >
-              <X className="w-3 h-3" />
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
         );

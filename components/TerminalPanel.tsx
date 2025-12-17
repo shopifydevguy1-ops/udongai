@@ -37,41 +37,41 @@ export function TerminalPanel() {
   if (!terminalOpen) return null;
 
   return (
-    <div className="h-64 bg-[#1e1e1e] border-t border-gray-700 flex flex-col">
-      <div className="flex items-center justify-between px-4 py-2 border-b border-gray-700">
+    <div className="h-64 bg-white border-t border-[#e8eaed] flex flex-col">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#e8eaed] bg-[#f8f9fa]">
         <div className="flex items-center gap-2">
-          <TerminalIcon className="w-4 h-4 text-gray-400" />
-          <span className="text-sm font-semibold text-gray-300">Terminal</span>
+          <TerminalIcon className="w-4 h-4 text-[#5f6368]" />
+          <span className="text-sm font-medium text-[#202124]">Terminal</span>
         </div>
         <button
           onClick={() => setTerminalOpen(false)}
-          className="text-gray-400 hover:text-gray-200"
+          className="text-[#5f6368] hover:text-[#202124] hover:bg-[#e8eaed] rounded-lg p-1 transition-colors"
         >
           <X className="w-4 h-4" />
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 font-mono text-sm">
+      <div className="flex-1 overflow-y-auto p-4 font-mono text-sm bg-[#1e1e1e]">
         {output.length === 0 && (
-          <div className="text-gray-500">
+          <div className="text-[#5f6368]">
             Terminal simulation mode. Commands are not executed for security.
           </div>
         )}
         {output.map((line, i) => (
-          <div key={i} className="text-gray-300 mb-1">
+          <div key={i} className="text-[#d4d4d4] mb-1">
             {line}
           </div>
         ))}
       </div>
 
-      <form onSubmit={handleCommand} className="px-4 py-2 border-t border-gray-700">
+      <form onSubmit={handleCommand} className="px-4 py-2 border-t border-[#e8eaed] bg-white">
         <input
           ref={inputRef}
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Enter command..."
-          className="w-full bg-transparent text-gray-300 focus:outline-none font-mono text-sm"
+          className="w-full bg-transparent text-[#202124] focus:outline-none font-mono text-sm"
         />
       </form>
     </div>
