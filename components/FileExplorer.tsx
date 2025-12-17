@@ -165,21 +165,62 @@ export function FileExplorer({ className }: FileExplorerProps) {
     return tree;
   };
 
+  // Check if a path or any of its children are uploaded files
+  const isUploadedPath = (path: string, isUploaded: boolean): boolean => {
+    if (!isUploaded) return false;
+    // Check if this exact path is uploaded
+    if (uploadedFiles.has(path)) return true;
+    // Check if any child path starts with this path
+    for (const uploadedPath of uploadedFiles.keys()) {
+      if (uploadedPath.startsWith(path + "/") || uploadedPath === path) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const handleRemoveDirectory = (path: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Find all files that start with this directory path
+    const filesToRemove: string[] = [];
+    uploadedFiles.forEach((content, filePath) => {
+      if (filePath.startsWith(path + "/") || filePath === path) {
+        filesToRemove.push(filePath);
+      }
+    });
+    
+    if (filesToRemove.length > 0) {
+      const fileCount = filesToRemove.length;
+      if (confirm(`Remove "${path}" and ${fileCount} file${fileCount > 1 ? "s" : ""}?`)) {
+        filesToRemove.forEach(filePath => {
+          removeUploadedFile(filePath);
+        });
+      }
+    }
+  };
+
   const renderNode = (node: FileNode, level: number = 0, isUploaded: boolean = false) => {
     const isExpanded = expandedPaths.has(node.path);
     const isSelected = selectedPath === node.path;
-    const isUploadedFile = isUploaded && uploadedFiles.has(node.path);
+    const isUploadedPathNode = isUploadedPath(node.path, isUploaded);
+    const isExactUploadedFile = isUploaded && uploadedFiles.has(node.path);
 
     if (node.type === "directory") {
       return (
         <div key={node.path}>
           <div
             className={cn(
-              "flex items-center gap-1 px-2 py-1 cursor-pointer hover:bg-gray-700 rounded group",
+              "flex items-center gap-1 px-2 py-1 cursor-pointer hover:bg-gray-700 rounded group relative",
               isSelected && "bg-gray-700"
             )}
             style={{ paddingLeft: `${level * 16 + 8}px` }}
             onClick={() => toggleExpand(node.path)}
+            onContextMenu={(e) => {
+              if (isUploadedPathNode) {
+                e.preventDefault();
+                handleRemoveDirectory(node.path, e);
+              }
+            }}
           >
             {isExpanded ? (
               <ChevronDown className="w-4 h-4 text-gray-400" />
@@ -188,13 +229,13 @@ export function FileExplorer({ className }: FileExplorerProps) {
             )}
             <Folder className="w-4 h-4 text-blue-400" />
             <span className="text-sm text-gray-300 flex-1">{node.name}</span>
-            {isUploadedFile && (
+            {isUploadedPathNode && (
               <button
-                onClick={(e) => handleRemoveFile(node.path, e)}
-                className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-gray-600 rounded"
-                title="Remove"
+                onClick={(e) => handleRemoveDirectory(node.path, e)}
+                className="opacity-70 group-hover:opacity-100 p-1 hover:bg-red-600/20 rounded transition-opacity"
+                title="Remove folder and all files"
               >
-                <X className="w-3 h-3 text-gray-400 hover:text-red-400" />
+                <X className="w-3.5 h-3.5 text-gray-400 hover:text-red-400" />
               </button>
             )}
           </div>
@@ -211,12 +252,12 @@ export function FileExplorer({ className }: FileExplorerProps) {
       <div
         key={node.path}
         className={cn(
-          "flex items-center gap-1 px-2 py-1 cursor-pointer hover:bg-gray-700 rounded group",
+          "flex items-center gap-1 px-2 py-1 cursor-pointer hover:bg-gray-700 rounded group relative",
           isSelected && "bg-gray-700"
         )}
         style={{ paddingLeft: `${level * 16 + 24}px` }}
         onClick={() => {
-          if (isUploadedFile && uploadedFiles.has(node.path)) {
+          if (isExactUploadedFile && uploadedFiles.has(node.path)) {
             const content = uploadedFiles.get(node.path)!;
             const language = getLanguageFromPath(node.path);
             openFile(node.path, content, language);
@@ -224,16 +265,22 @@ export function FileExplorer({ className }: FileExplorerProps) {
             handleFileClick(node.path);
           }
         }}
+        onContextMenu={(e) => {
+          if (isExactUploadedFile) {
+            e.preventDefault();
+            handleRemoveFile(node.path, e);
+          }
+        }}
       >
         <File className="w-4 h-4 text-gray-400" />
         <span className="text-sm text-gray-300 flex-1">{node.name}</span>
-        {isUploadedFile && (
+        {isExactUploadedFile && (
           <button
             onClick={(e) => handleRemoveFile(node.path, e)}
-            className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-gray-600 rounded"
-            title="Remove"
+            className="opacity-70 group-hover:opacity-100 p-1 hover:bg-red-600/20 rounded transition-opacity"
+            title="Remove file (or right-click)"
           >
-            <X className="w-3 h-3 text-gray-400 hover:text-red-400" />
+            <X className="w-3.5 h-3.5 text-gray-400 hover:text-red-400" />
           </button>
         )}
       </div>
@@ -242,36 +289,58 @@ export function FileExplorer({ className }: FileExplorerProps) {
 
   return (
     <div className={cn("h-full overflow-y-auto bg-[#252526] flex flex-col", className)}>
-      <div className="p-2 border-b border-gray-700 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-gray-300">EXPLORER</h2>
-        <div className="flex gap-1">
-          <button
-            onClick={handleNewFile}
-            className="p-1 hover:bg-gray-700 rounded text-gray-400 hover:text-gray-200"
-            title="New file"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => {
-              folderInputRef.current?.click();
-            }}
-            className="p-1 hover:bg-gray-700 rounded text-gray-400 hover:text-gray-200"
-            title="Upload folder"
-          >
-            <FolderUp className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => {
-              fileInputRef.current?.click();
-              setShowUpload(true);
-            }}
-            className="p-1 hover:bg-gray-700 rounded text-gray-400 hover:text-gray-200"
-            title="Upload files"
-          >
-            <Upload className="w-4 h-4" />
-          </button>
+      <div className="p-2 border-b border-gray-700">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-sm font-semibold text-gray-300">EXPLORER</h2>
+          <div className="flex gap-1">
+            <button
+              onClick={handleNewFile}
+              className="p-1 hover:bg-gray-700 rounded text-gray-400 hover:text-gray-200"
+              title="New file"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => {
+                folderInputRef.current?.click();
+              }}
+              className="p-1 hover:bg-gray-700 rounded text-gray-400 hover:text-gray-200"
+              title="Upload folder"
+            >
+              <FolderUp className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => {
+                fileInputRef.current?.click();
+                setShowUpload(true);
+              }}
+              className="p-1 hover:bg-gray-700 rounded text-gray-400 hover:text-gray-200"
+              title="Upload files"
+            >
+              <Upload className="w-4 h-4" />
+            </button>
+          </div>
         </div>
+        {uploadedFiles.size > 0 && (
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-gray-500">
+              {uploadedFiles.size} uploaded file{uploadedFiles.size > 1 ? "s" : ""}
+            </span>
+            <button
+              onClick={() => {
+                if (confirm(`Remove all ${uploadedFiles.size} uploaded file${uploadedFiles.size > 1 ? "s" : ""}?`)) {
+                  uploadedFiles.forEach((content, path) => {
+                    removeUploadedFile(path);
+                  });
+                }
+              }}
+              className="text-red-400 hover:text-red-300 text-xs"
+              title="Clear all uploaded files"
+            >
+              Clear All
+            </button>
+          </div>
+        )}
       </div>
       <input
         ref={fileInputRef}
