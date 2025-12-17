@@ -8,7 +8,18 @@ export class HuggingFaceProvider extends BaseProvider {
 
   constructor() {
     super();
-    this.apiKey = process.env.HUGGINGFACE_API_KEY || null;
+    // Support both HUGGINGFACE_API_KEY and AI_API_KEY (check if it's a HuggingFace key)
+    const hfKey = process.env.HUGGINGFACE_API_KEY;
+    const aiKey = process.env.AI_API_KEY;
+    
+    // Use AI_API_KEY only if it starts with "hf_" (HuggingFace key format)
+    if (hfKey) {
+      this.apiKey = hfKey;
+    } else if (aiKey && aiKey.startsWith("hf_")) {
+      this.apiKey = aiKey;
+    } else {
+      this.apiKey = null;
+    }
   }
 
   async isAvailable(): Promise<boolean> {

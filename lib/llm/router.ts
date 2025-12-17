@@ -33,9 +33,27 @@ export class LLMRouter {
 
     // Select model if not specified
     if (!request.model) {
-      const selectedModel = this.tokenManager.selectModel(request);
-      request.model = selectedModel.id;
-      request.provider = selectedModel.provider;
+      // Check if AI_MODEL env var is set (comma-separated list)
+      const aiModelEnv = process.env.AI_MODEL;
+      if (aiModelEnv) {
+        const preferredModels = aiModelEnv.split(",").map(m => m.trim());
+        // Try to find the first preferred model that's available
+        for (const modelId of preferredModels) {
+          const model = findModel(modelId);
+          if (model) {
+            request.model = model.id;
+            request.provider = model.provider;
+            break;
+          }
+        }
+      }
+      
+      // If no model selected yet, use smart selection
+      if (!request.model) {
+        const selectedModel = this.tokenManager.selectModel(request);
+        request.model = selectedModel.id;
+        request.provider = selectedModel.provider;
+      }
     }
 
     // Get fallback chain
@@ -70,7 +88,7 @@ export class LLMRouter {
         .map(p => `${p.provider.toUpperCase()}_API_KEY`)
         .join(", ");
       throw new Error(
-        `No LLM providers are configured. Please set at least one API key: ${missingKeys}`
+        `No LLM providers are configured. Please set at least one API key: ${missingKeys} or AI_API_KEY`
       );
     }
 

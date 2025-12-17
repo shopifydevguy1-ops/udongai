@@ -8,15 +8,18 @@ export class GroqProvider extends BaseProvider {
 
   constructor() {
     super();
-    if (process.env.GROQ_API_KEY) {
+    // Support both GROQ_API_KEY and AI_API_KEY (for compatibility)
+    const apiKey = process.env.GROQ_API_KEY || process.env.AI_API_KEY;
+    if (apiKey) {
       this.client = new Groq({
-        apiKey: process.env.GROQ_API_KEY,
+        apiKey: apiKey,
       });
     }
   }
 
   async isAvailable(): Promise<boolean> {
-    return !!this.client && !!process.env.GROQ_API_KEY;
+    const apiKey = process.env.GROQ_API_KEY || process.env.AI_API_KEY;
+    return !!this.client && !!apiKey;
   }
 
   async chat(request: LLMRequest): Promise<LLMResponse> {

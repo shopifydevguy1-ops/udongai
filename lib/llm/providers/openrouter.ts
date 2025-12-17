@@ -8,7 +8,19 @@ export class OpenRouterProvider extends BaseProvider {
 
   constructor() {
     super();
-    this.apiKey = process.env.OPENROUTER_API_KEY || null;
+    // Support both OPENROUTER_API_KEY and AI_API_KEY (check if it's an OpenRouter key)
+    // OpenRouter keys typically don't start with "gsk_" (Groq) or "hf_" (HuggingFace)
+    const openRouterKey = process.env.OPENROUTER_API_KEY;
+    const aiKey = process.env.AI_API_KEY;
+    
+    // Use AI_API_KEY only if it doesn't look like a Groq key (gsk_) or HuggingFace key (hf_)
+    if (openRouterKey) {
+      this.apiKey = openRouterKey;
+    } else if (aiKey && !aiKey.startsWith("gsk_") && !aiKey.startsWith("hf_")) {
+      this.apiKey = aiKey;
+    } else {
+      this.apiKey = null;
+    }
   }
 
   async isAvailable(): Promise<boolean> {
