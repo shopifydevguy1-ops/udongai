@@ -46,9 +46,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Process messages and add image context
+    const processedMessages = messages.map((msg: any) => {
+      if (msg.images && msg.images.length > 0) {
+        // Add image information to the message content
+        const imageNote = `\n\n[User has attached ${msg.images.length} image(s). Please analyze and respond accordingly. Note: Image data is included in base64 format.]`;
+        return {
+          ...msg,
+          content: (msg.content || "") + imageNote,
+        };
+      }
+      return msg;
+    });
+
     // Create LLM request
     const llmRequest: LLMRequest = {
-      messages,
+      messages: processedMessages,
       maxTokens: maxTokens ? Math.min(maxTokens, 4096) : undefined,
       temperature: temperature || 0.7,
       model,

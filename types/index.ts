@@ -63,5 +63,6 @@ export interface ChatMessage {
   content: string;
   timestamp: Date;
   tokenUsage?: TokenUsage;
+  images?: string[]; // Base64 encoded images
 }
 

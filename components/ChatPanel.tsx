@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useAppStore } from "@/store/useAppStore";
-import { Send, Loader2, Upload, Paperclip, X } from "lucide-react";
+import { Send, Loader2, Upload, Paperclip, X, Image as ImageIcon } from "lucide-react";
 import { cn, getLanguageFromPath } from "@/lib/utils";
 
 export function ChatPanel() {
@@ -15,8 +15,10 @@ export function ChatPanel() {
     editor,
   } = useAppStore();
   const [input, setInput] = useState("");
+  const [pendingImages, setPendingImages] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const { uploadedFiles, addUploadedFile, removeUploadedFile } = useAppStore();
 
   const scrollToBottom = () => {
@@ -26,6 +28,33 @@ export function ChatPanel() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Handle paste events for screenshots
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.type.indexOf("image") !== -1) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              const base64 = event.target?.result as string;
+              setPendingImages((prev) => [...prev, base64]);
+            };
+            reader.readAsDataURL(file);
+          }
+        }
+      }
+    };
+
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+  }, []);
 
   const getContextFromOpenFiles = () => {
     // Include both open files and uploaded files
@@ -65,22 +94,49 @@ export function ChatPanel() {
     }
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach((file) => {
+      if (file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const base64 = event.target?.result as string;
+          setPendingImages((prev) => [...prev, base64]);
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    if (imageInputRef.current) {
+      imageInputRef.current.value = "";
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isStreaming) return;
+    if (!input.trim() && pendingImages.length === 0 || isStreaming) return;
 
-    const userMessage = input.trim();
+    const userMessage = input.trim() || (pendingImages.length > 0 ? "[Image attached]" : "");
+    const images = [...pendingImages];
     setInput("");
-    addMessage({ role: "user", content: userMessage });
+    setPendingImages([]);
+    addMessage({ role: "user", content: userMessage, images });
 
     setIsStreaming(true);
 
     try {
       // Build context from open files
       const context = getContextFromOpenFiles();
-      const systemMessage = context
+      let systemMessage = context
         ? `You are an expert AI development assistant. You have access to the following files:\n\n${context}\n\nProvide helpful, accurate code suggestions and explanations.`
         : "You are an expert AI development assistant. Provide helpful, accurate code suggestions and explanations.";
+
+      // Add image context if images are present
+      if (images.length > 0) {
+        systemMessage += `\n\nThe user has attached ${images.length} image(s). Please analyze the images and provide relevant assistance.`;
+      }
 
       const response = await fetch("/api/chat", {
         method: "POST",
@@ -88,7 +144,7 @@ export function ChatPanel() {
         body: JSON.stringify({
           messages: [
             { role: "system", content: systemMessage },
-            { role: "user", content: userMessage },
+            { role: "user", content: userMessage, images },
           ],
           maxTokens: 2048,
           temperature: 0.7,
@@ -136,6 +192,7 @@ export function ChatPanel() {
             </div>
             <p className="text-sm font-medium text-[#202124] mb-1">Start a conversation</p>
             <p className="text-xs text-[#5f6368]">The AI can see your open files for context</p>
+            <p className="text-xs text-[#5f6368] mt-2">💡 Tip: Paste screenshots with Ctrl+V / Cmd+V</p>
           </div>
         )}
 
@@ -161,7 +218,22 @@ export function ChatPanel() {
                     : "bg-[#f1f3f4] text-[#202124]"
                 )}
               >
-                <div className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</div>
+                {message.images && message.images.length > 0 && (
+                  <div className="mb-3 space-y-2">
+                    {message.images.map((img, idx) => (
+                      <div key={idx} className="rounded-lg overflow-hidden max-w-md">
+                        <img
+                          src={img}
+                          alt={`Attached image ${idx + 1}`}
+                          className="max-w-full h-auto rounded-lg"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {message.content && (
+                  <div className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</div>
+                )}
                 {message.tokenUsage && (
                   <div className={cn(
                     "text-xs mt-3 pt-2 border-t",
@@ -201,7 +273,7 @@ export function ChatPanel() {
 
       <form onSubmit={handleSubmit} className="p-4 border-t border-[#e8eaed] bg-white">
         <div className="max-w-4xl mx-auto">
-          {uploadedFiles.size > 0 && (
+          {(uploadedFiles.size > 0 || pendingImages.length > 0) && (
             <div className="mb-3 flex flex-wrap gap-2">
               {Array.from(uploadedFiles.keys()).map((path) => (
                 <span
@@ -212,6 +284,22 @@ export function ChatPanel() {
                   <button
                     type="button"
                     onClick={() => removeUploadedFile(path)}
+                    className="hover:text-red-600"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+              {pendingImages.map((img, idx) => (
+                <span
+                  key={`img-${idx}`}
+                  className="px-3 py-1 bg-[#e3f2fd] text-[#1a73e8] rounded-full text-xs flex items-center gap-2"
+                >
+                  <ImageIcon className="w-3 h-3" />
+                  Screenshot {idx + 1}
+                  <button
+                    type="button"
+                    onClick={() => setPendingImages((prev) => prev.filter((_, i) => i !== idx))}
                     className="hover:text-red-600"
                   >
                     <X className="w-3 h-3" />
@@ -229,6 +317,14 @@ export function ChatPanel() {
             >
               <Paperclip className="w-5 h-5" />
             </button>
+            <button
+              type="button"
+              onClick={() => imageInputRef.current?.click()}
+              className="p-3 hover:bg-[#f8f9fa] rounded-full text-[#5f6368] hover:text-[#202124] transition-colors"
+              title="Upload image or paste screenshot (Ctrl+V / Cmd+V)"
+            >
+              <ImageIcon className="w-5 h-5" />
+            </button>
             <input
               ref={fileInputRef}
               type="file"
@@ -238,12 +334,20 @@ export function ChatPanel() {
               // @ts-ignore
               webkitdirectory=""
             />
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageUpload}
+              className="hidden"
+            />
             <div className="flex-1 relative">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask a question or request code help..."
+                placeholder="Ask a question, paste a screenshot (Ctrl+V), or request code help..."
                 className="w-full px-4 py-3 bg-[#f8f9fa] text-[#202124] rounded-full border border-[#e8eaed] focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:border-transparent transition-all disabled:opacity-50"
                 disabled={isStreaming}
               />
