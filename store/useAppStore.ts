@@ -14,6 +14,9 @@ interface AppState {
   setFileTree: (tree: FileNode[]) => void;
   selectedPath: string | null;
   setSelectedPath: (path: string | null) => void;
+  uploadedFiles: Map<string, string>; // path -> content
+  addUploadedFile: (path: string, content: string) => void;
+  removeUploadedFile: (path: string) => void;
 
   // Chat
   messages: ChatMessage[];
@@ -102,6 +105,34 @@ export const useAppStore = create<AppState>((set) => ({
   setFileTree: (tree) => set({ fileTree: tree }),
   selectedPath: null,
   setSelectedPath: (path) => set({ selectedPath: path }),
+  uploadedFiles: new Map(),
+  addUploadedFile: (path, content) =>
+    set((state) => {
+      const newMap = new Map(state.uploadedFiles);
+      newMap.set(path, content);
+      return { uploadedFiles: newMap };
+    }),
+  removeUploadedFile: (path) =>
+    set((state) => {
+      const newMap = new Map(state.uploadedFiles);
+      newMap.delete(path);
+      // Also close the file if it's open
+      const files = state.editor.openFiles.filter((f) => f.path !== path);
+      const activeFile =
+        state.editor.activeFile === path
+          ? files.length > 0
+            ? files[files.length - 1].path
+            : undefined
+          : state.editor.activeFile;
+      return {
+        uploadedFiles: newMap,
+        editor: {
+          ...state.editor,
+          openFiles: files,
+          activeFile,
+        },
+      };
+    }),
 
   // Chat
   messages: [],
