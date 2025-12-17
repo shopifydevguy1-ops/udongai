@@ -2,8 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useAppStore } from "@/store/useAppStore";
-import { Send, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Send, Loader2, Upload, Paperclip, X } from "lucide-react";
+import { cn, getLanguageFromPath } from "@/lib/utils";
 
 export function ChatPanel() {
   const {
@@ -16,6 +16,8 @@ export function ChatPanel() {
   } = useAppStore();
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { uploadedFiles, addUploadedFile, removeUploadedFile } = useAppStore();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -26,11 +28,41 @@ export function ChatPanel() {
   }, [messages]);
 
   const getContextFromOpenFiles = () => {
-    if (editor.openFiles.length === 0) return "";
+    // Include both open files and uploaded files
+    const allFiles = [
+      ...editor.openFiles,
+      ...Array.from(uploadedFiles.entries()).map(([path, content]) => ({
+        path,
+        content,
+        language: getLanguageFromPath(path),
+      })),
+    ];
 
-    return editor.openFiles
-      .map((file) => `File: ${file.path}\n\`\`\`${file.path.split(".").pop()}\n${file.content}\n\`\`\``)
+    if (allFiles.length === 0) return "";
+
+    return allFiles
+      .map((file) => `File: ${file.path}\n\`\`\`${file.language || file.path.split(".").pop()}\n${file.content}\n\`\`\``)
       .join("\n\n");
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const content = event.target?.result as string;
+        const filePath = (file as any).webkitRelativePath || file.name;
+        const language = getLanguageFromPath(filePath);
+        addUploadedFile(filePath, content);
+      };
+      reader.readAsText(file);
+    });
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -94,11 +126,7 @@ export function ChatPanel() {
 
   return (
     <div className="flex flex-col h-full bg-white">
-      <div className="px-6 py-4 border-b border-[#e8eaed]">
-        <h2 className="text-base font-medium text-[#202124]">AI Assistant</h2>
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-4 py-6">
+      <div className="flex-1 overflow-y-auto px-4 py-8">
         {messages.length === 0 && (
           <div className="text-center text-[#5f6368] mt-12">
             <div className="mb-4">
@@ -111,7 +139,7 @@ export function ChatPanel() {
           </div>
         )}
 
-        <div className="space-y-6 max-w-3xl mx-auto">
+        <div className="space-y-6 max-w-4xl mx-auto">
           {messages.map((message) => (
             <div
               key={message.id}
@@ -172,28 +200,66 @@ export function ChatPanel() {
       </div>
 
       <form onSubmit={handleSubmit} className="p-4 border-t border-[#e8eaed] bg-white">
-        <div className="flex gap-3 items-end max-w-3xl mx-auto">
-          <div className="flex-1 relative">
+        <div className="max-w-4xl mx-auto">
+          {uploadedFiles.size > 0 && (
+            <div className="mb-3 flex flex-wrap gap-2">
+              {Array.from(uploadedFiles.keys()).map((path) => (
+                <span
+                  key={path}
+                  className="px-3 py-1 bg-[#f1f3f4] text-[#202124] rounded-full text-xs flex items-center gap-2"
+                >
+                  {path.split("/").pop()}
+                  <button
+                    type="button"
+                    onClick={() => removeUploadedFile(path)}
+                    className="hover:text-red-600"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="flex gap-3 items-end">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="p-3 hover:bg-[#f8f9fa] rounded-full text-[#5f6368] hover:text-[#202124] transition-colors"
+              title="Upload files"
+            >
+              <Paperclip className="w-5 h-5" />
+            </button>
             <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask a question or request code help..."
-              className="w-full px-4 py-3 bg-[#f8f9fa] text-[#202124] rounded-full border border-[#e8eaed] focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:border-transparent transition-all disabled:opacity-50"
-              disabled={isStreaming}
+              ref={fileInputRef}
+              type="file"
+              multiple
+              onChange={handleFileUpload}
+              className="hidden"
+              // @ts-ignore
+              webkitdirectory=""
             />
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Ask a question or request code help..."
+                className="w-full px-4 py-3 bg-[#f8f9fa] text-[#202124] rounded-full border border-[#e8eaed] focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:border-transparent transition-all disabled:opacity-50"
+                disabled={isStreaming}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={!input.trim() || isStreaming}
+              className="px-6 py-3 bg-[#1a73e8] text-white rounded-full hover:bg-[#1557b0] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-sm transition-all hover:shadow-md"
+            >
+              {isStreaming ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Send className="w-5 h-5" />
+              )}
+            </button>
           </div>
-          <button
-            type="submit"
-            disabled={!input.trim() || isStreaming}
-            className="px-6 py-3 bg-[#1a73e8] text-white rounded-full hover:bg-[#1557b0] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-sm transition-all hover:shadow-md"
-          >
-            {isStreaming ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <Send className="w-5 h-5" />
-            )}
-          </button>
         </div>
       </form>
     </div>
