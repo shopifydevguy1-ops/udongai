@@ -1,5 +1,5 @@
-import { TokenUsage, LLMRequest } from "@/types";
-import { LLMModel, getDefaultModel, getFallbackChain } from "./models";
+import { TokenUsage, LLMRequest, LLMModel } from "@/types";
+import { getDefaultModel, getFallbackChain, getModelsByTier } from "./models";
 
 /**
  * Token usage limits and safety thresholds
@@ -103,7 +103,6 @@ export class TokenManager {
    * Select appropriate model based on request complexity
    */
   selectModel(request: LLMRequest, forceTier?: "free" | "mid" | "high"): LLMModel {
-    const { getModelsByTier, getDefaultModel } = require("./models");
     const fallbackChain = getFallbackChain();
     
     if (forceTier) {
