@@ -28,9 +28,15 @@ export class GroqProvider extends BaseProvider {
     const maxTokens = Math.min(request.maxTokens || 2048, 8192);
 
     try {
+      // Format messages with proper types for Groq SDK
+      const messages = request.messages.map((msg) => ({
+        role: msg.role as "system" | "user" | "assistant",
+        content: msg.content,
+      }));
+
       const completion = await this.client.chat.completions.create({
         model,
-        messages: this.formatMessages(request.messages),
+        messages,
         max_tokens: maxTokens,
         temperature: request.temperature || 0.7,
       });
