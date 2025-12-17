@@ -42,8 +42,41 @@ export class LLMRouter {
     const model = findModel(request.model || "") || getDefaultModel();
     const fallbackChain = this.getFallbackChainForModel(model);
 
+    // Check which providers are available first
+    const availableProviders: string[] = [];
+    const unavailableProviders: Array<{ provider: string; reason: string }> = [];
+    
+    for (const [name, provider] of this.providers.entries()) {
+      try {
+        const isAvailable = await provider.isAvailable();
+        if (isAvailable) {
+          availableProviders.push(name);
+        } else {
+          unavailableProviders.push({ 
+            provider: name, 
+            reason: `API key not configured` 
+          });
+        }
+      } catch (error: any) {
+        unavailableProviders.push({ 
+          provider: name, 
+          reason: error.message || "Unknown error" 
+        });
+      }
+    }
+
+    if (availableProviders.length === 0) {
+      const missingKeys = unavailableProviders
+        .map(p => `${p.provider.toUpperCase()}_API_KEY`)
+        .join(", ");
+      throw new Error(
+        `No LLM providers are configured. Please set at least one API key: ${missingKeys}`
+      );
+    }
+
     // Try providers in order
-    let lastError: Error | null = null;
+    const errors: Array<{ model: string; provider: string; error: string }> = [];
+    
     for (const fallbackModel of fallbackChain) {
       try {
         const provider = this.providers.get(fallbackModel.provider);
@@ -53,7 +86,11 @@ export class LLMRouter {
 
         // Check if provider is available
         if (!(await provider.isAvailable())) {
-          console.warn(`Provider ${fallbackModel.provider} not available, trying next...`);
+          errors.push({
+            model: fallbackModel.id,
+            provider: fallbackModel.provider,
+            error: "API key not configured"
+          });
           continue;
         }
 
@@ -76,15 +113,24 @@ export class LLMRouter {
 
         return response;
       } catch (error: any) {
-        lastError = error;
-        console.warn(`Failed with model ${fallbackModel.id}: ${error.message}`);
+        errors.push({
+          model: fallbackModel.id,
+          provider: fallbackModel.provider,
+          error: error.message || "Unknown error"
+        });
         continue;
       }
     }
 
-    // All providers failed
+    // All providers failed - provide detailed error message
+    const errorDetails = errors
+      .slice(0, 3) // Show first 3 errors
+      .map(e => `${e.provider}/${e.model}: ${e.error}`)
+      .join("; ");
+    
     throw new Error(
-      `All providers failed. Last error: ${lastError?.message || "Unknown error"}`
+      `All LLM providers failed. Errors: ${errorDetails}${errors.length > 3 ? ` (and ${errors.length - 3} more)` : ""}. ` +
+      `Please check your API keys in Vercel environment variables.`
     );
   }
 

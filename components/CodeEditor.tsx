@@ -18,9 +18,14 @@ export function CodeEditor() {
   if (!activeFile) {
     return (
       <div className="flex items-center justify-center h-full bg-[#1e1e1e] text-gray-500">
-        <div className="text-center">
+        <div className="text-center max-w-md">
           <p className="text-lg mb-2">No file open</p>
-          <p className="text-sm">Open a file from the explorer to start editing</p>
+          <p className="text-sm mb-4">
+            Upload a file from the explorer or create a new file to start editing
+          </p>
+          <p className="text-xs text-gray-600">
+            Use the upload button (📤) or new file button (+) in the explorer sidebar
+          </p>
         </div>
       </div>
     );
