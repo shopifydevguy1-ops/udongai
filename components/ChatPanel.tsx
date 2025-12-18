@@ -116,24 +116,46 @@ export function ChatPanel() {
 
   // Detect if user wants to generate media
   const detectMediaGeneration = (text: string): { generate: boolean; format: string; prompt: string } | null => {
-    const lowerText = text.toLowerCase();
+    const lowerText = text.toLowerCase().trim();
     
-    // Check for explicit generation requests
+    // More aggressive detection - check for image generation keywords first
+    const imageKeywords = [
+      "generate an image", "generate a image", "generate image",
+      "create an image", "create a image", "create image",
+      "make an image", "make a image", "make image",
+      "draw an image", "draw a image", "draw image",
+      "generate a picture", "generate picture", "create picture", "make picture",
+      "show me an image", "show me a image", "show me image",
+      "generate a photo", "create a photo", "make a photo",
+      "image of", "picture of", "photo of",
+    ];
+
+    // Check if it's clearly an image generation request
+    for (const keyword of imageKeywords) {
+      if (lowerText.includes(keyword)) {
+        // Extract the prompt after the keyword
+        const keywordIndex = lowerText.indexOf(keyword);
+        const prompt = text.substring(keywordIndex + keyword.length).trim();
+        if (prompt) {
+          return { generate: true, format: "png", prompt };
+        }
+      }
+    }
+
+    // Check for explicit generation requests with format
     const generationPatterns = [
-      { pattern: /generate\s+(?:a|an|the)?\s*(gif|webp|mp4|3d|image|picture|video|model)/i, format: "auto" },
-      { pattern: /create\s+(?:a|an|the)?\s*(gif|webp|mp4|3d|image|picture|video|model)/i, format: "auto" },
-      { pattern: /make\s+(?:a|an|the)?\s*(gif|webp|mp4|3d|image|picture|video|model)/i, format: "auto" },
-      { pattern: /draw\s+(?:a|an|the)?/i, format: "png" },
-      { pattern: /show\s+me\s+(?:a|an|the)?/i, format: "png" },
+      { pattern: /^(generate|create|make|draw|show\s+me)\s+(?:a|an|the)?\s*(gif|webp|mp4|3d|image|picture|video|model|photo)\s+(?:of|with|showing)?\s*(.+)/i, format: "auto" },
+      { pattern: /^(generate|create|make|draw|show\s+me)\s+(.+)/i, format: "png" },
     ];
 
     for (const { pattern, format } of generationPatterns) {
-      if (pattern.test(text)) {
-        const match = text.match(pattern);
+      const match = text.match(pattern);
+      if (match) {
         let detectedFormat = format;
+        let prompt = "";
         
-        // Extract format from match
-        if (match && match[1]) {
+        if (format === "auto" && match[2] && match[3]) {
+          // Has format specified
           const formatMap: Record<string, string> = {
             gif: "gif",
             webp: "webp",
@@ -143,14 +165,14 @@ export function ChatPanel() {
             model: "glb",
             image: "png",
             picture: "png",
+            photo: "png",
           };
-          detectedFormat = formatMap[match[1].toLowerCase()] || "png";
+          detectedFormat = formatMap[match[2].toLowerCase()] || "png";
+          prompt = match[3].trim();
+        } else if (match[2]) {
+          // No format, use default
+          prompt = match[2].trim();
         }
-
-        // Extract prompt (remove generation keywords)
-        const prompt = text
-          .replace(/^(generate|create|make|draw|show me)\s+(?:a|an|the)?\s*(gif|webp|mp4|3d|image|picture|video|model)?\s*/i, "")
-          .trim();
 
         if (prompt) {
           return { generate: true, format: detectedFormat, prompt };
@@ -158,22 +180,31 @@ export function ChatPanel() {
       }
     }
 
-    // Check for format-specific keywords
-    if (lowerText.includes(" as gif") || lowerText.includes(" gif format")) {
-      const prompt = text.replace(/\s+as\s+gif|\s+gif\s+format/gi, "").trim();
+    // Check for format-specific keywords at the end
+    if (lowerText.includes(" as gif") || lowerText.includes(" gif format") || lowerText.endsWith(" gif")) {
+      const prompt = text.replace(/\s+as\s+gif|\s+gif\s+format|\s+gif$/gi, "").trim();
       if (prompt) return { generate: true, format: "gif", prompt };
     }
-    if (lowerText.includes(" as webp") || lowerText.includes(" webp format")) {
-      const prompt = text.replace(/\s+as\s+webp|\s+webp\s+format/gi, "").trim();
+    if (lowerText.includes(" as webp") || lowerText.includes(" webp format") || lowerText.endsWith(" webp")) {
+      const prompt = text.replace(/\s+as\s+webp|\s+webp\s+format|\s+webp$/gi, "").trim();
       if (prompt) return { generate: true, format: "webp", prompt };
     }
-    if (lowerText.includes(" as mp4") || lowerText.includes(" mp4 format") || lowerText.includes(" as video")) {
-      const prompt = text.replace(/\s+as\s+mp4|\s+mp4\s+format|\s+as\s+video/gi, "").trim();
+    if (lowerText.includes(" as mp4") || lowerText.includes(" mp4 format") || lowerText.includes(" as video") || lowerText.endsWith(" mp4") || lowerText.endsWith(" video")) {
+      const prompt = text.replace(/\s+as\s+mp4|\s+mp4\s+format|\s+as\s+video|\s+mp4$|\s+video$/gi, "").trim();
       if (prompt) return { generate: true, format: "mp4", prompt };
     }
-    if (lowerText.includes(" as 3d") || lowerText.includes(" 3d model") || lowerText.includes(" as glb")) {
-      const prompt = text.replace(/\s+as\s+3d|\s+3d\s+model|\s+as\s+glb/gi, "").trim();
+    if (lowerText.includes(" as 3d") || lowerText.includes(" 3d model") || lowerText.includes(" as glb") || lowerText.endsWith(" 3d")) {
+      const prompt = text.replace(/\s+as\s+3d|\s+3d\s+model|\s+as\s+glb|\s+3d$/gi, "").trim();
       if (prompt) return { generate: true, format: "glb", prompt };
+    }
+
+    // Last resort: if message is short and doesn't look like a question, treat as image generation
+    if (text.length < 100 && !text.includes("?") && !text.includes("how") && !text.includes("what") && !text.includes("why")) {
+      // Check if it's a descriptive phrase (likely image prompt)
+      const descriptiveWords = ["with", "showing", "featuring", "of a", "of an", "depicting"];
+      if (descriptiveWords.some(word => lowerText.includes(word))) {
+        return { generate: true, format: "png", prompt: text.trim() };
+      }
     }
 
     return null;
@@ -192,36 +223,47 @@ export function ChatPanel() {
     setIsStreaming(true);
 
     try {
-      // Check if user wants to generate media
+      // Check if user wants to generate media FIRST (before sending to AI)
       const mediaRequest = detectMediaGeneration(userMessage);
       
       if (mediaRequest && mediaRequest.generate) {
-        // Generate media
-        const generateResponse = await fetch("/api/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            prompt: mediaRequest.prompt,
-            format: mediaRequest.format,
-            size: "1024x1024",
-          }),
-        });
+        // Generate media immediately - don't send to AI chat
+        try {
+          const generateResponse = await fetch("/api/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              prompt: mediaRequest.prompt,
+              format: mediaRequest.format,
+              size: "1024x1024",
+            }),
+          });
 
-        if (!generateResponse.ok) {
-          const error = await generateResponse.json();
-          throw new Error(error.error || "Failed to generate media");
+          if (!generateResponse.ok) {
+            const error = await generateResponse.json();
+            throw new Error(error.error || "Failed to generate media");
+          }
+
+          const generatedData = await generateResponse.json();
+          
+          addMessage({
+            role: "assistant",
+            content: `I've generated a ${generatedData.type} for you based on: "${mediaRequest.prompt}"`,
+            generatedMedia: [generatedData],
+          });
+
+          setIsStreaming(false);
+          return;
+        } catch (genError: any) {
+          // If generation fails, fall through to regular chat
+          console.error("Generation error:", genError);
+          addMessage({
+            role: "assistant",
+            content: `I tried to generate an image but encountered an error: ${genError.message}. Would you like me to help you create it through code instead?`,
+          });
+          setIsStreaming(false);
+          return;
         }
-
-        const generatedData = await generateResponse.json();
-        
-        addMessage({
-          role: "assistant",
-          content: `I've generated a ${generatedData.type} for you: "${mediaRequest.prompt}"`,
-          generatedMedia: [generatedData],
-        });
-
-        setIsStreaming(false);
-        return;
       }
 
       // Regular chat flow
@@ -235,6 +277,10 @@ export function ChatPanel() {
       if (images.length > 0) {
         systemMessage += `\n\nThe user has attached ${images.length} image(s). Please analyze the images and provide relevant assistance.`;
       }
+
+      // Important: If user asks to generate/create images, the system handles it automatically.
+      // Don't provide code for image generation - the system will generate the image directly.
+      systemMessage += `\n\nIMPORTANT: If the user asks to generate, create, make, or draw an image/picture/photo, the system will automatically generate it. Do NOT provide code for image generation.`;
 
       const response = await fetch("/api/chat", {
         method: "POST",
